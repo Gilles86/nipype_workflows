@@ -4,7 +4,9 @@ from nipype.interfaces import io as nio
 from custom_nipype_interfaces import MiconvResize
 import os
 
+GRAPPA = 3
 ECHO_SPACING = 0.00105
+ECHO_SPACING = ECHO_SPACING / GRAPPA
 DELTA_TE = 0.00102
 SMOOTH_3D = 2.5
 N_PROCESSORS = 4
