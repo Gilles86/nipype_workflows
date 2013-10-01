@@ -7,7 +7,7 @@ import os
 ECHO_SPACING = 0.00105
 DELTA_TE = 0.00102
 SMOOTH_3D = 2.5
-N_PROCESSORS = 2
+N_PROCESSORS = 4
 
 workflow = pe.Workflow(name='register_and_unwarp_leipzig_data')
 
@@ -26,14 +26,14 @@ dg.inputs.template_args = dict(fieldmap_scanner=[['subject_id']],
 dg.inputs.subject_id = 'BI3T'
 
 
-# returns the first three dimensions of nifti-file
+# returns the first three dimensions of nifti-file IN REVERSE ORDER (because of way Miconv handles things)
 def get_dims(in_file):
     import nibabel as nb
     
     if type(in_file) == list:
         in_file = in_file[0]
     
-    return nb.load(in_file).get_shape()[:3]
+    return nb.load(in_file).get_shape()[:3][::-1]
 
 
 motion_correct = pe.MapNode(fsl.MCFLIRT(), name='motion_correct', iterfield=['in_file'])
@@ -55,6 +55,7 @@ better.inputs.vertical_gradient = 0.
 #miconv -resize "$NZ,$NY,$NX" $folder/fieldmap.nii.gz $folder/fieldmap.nii.gz
 #miconv -resize "$NZ,$NY,$NX" $folder/mag1_brain_mask.nii.gz $folder/mag1_brain_mask.nii.gz
 #miconv -resize "$NZ,$NY,$NX" $folder/$Magnitude_fieldmap $folder/mag_fieldmap_resampled.nii.gz
+
 resize_fieldmap = pe.Node(MiconvResize(), name='resize_fieldmap')
 resize_brain_mask = pe.Node(MiconvResize(), name='resize_brain_mask')
 resize_magnitude_fieldmap = pe.Node(MiconvResize(), name='resize_magnitude_fieldmap')
