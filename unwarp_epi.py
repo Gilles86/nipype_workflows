@@ -39,7 +39,6 @@ def get_dims(in_file):
 motion_correct = pe.MapNode(fsl.MCFLIRT(), name='motion_correct', iterfield=['in_file'])
 
 # fslmaths $folder/$fieldmap_scanner -div 4096 -mul 3.14159 -div $DELTA_TE $folder/fieldmap.nii.gz -odt float
-DELTA_TE = 0.00102
 normalizer = pe.Node(fsl.maths.MathsCommand(), name='normalizer')
 normalizer.inputs.args = '-div 4096 -mul 3.14159 -div %s' % DELTA_TE
 normalizer.inputs.out_file = 'fieldmap.nii.gz'
