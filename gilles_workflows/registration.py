@@ -9,7 +9,7 @@ from nipype.interfaces.c3 import C3dAffineTool
 
 def create_fsl_afni_reg(name='ants_fsl_registration',
                         base_dir=None,
-                        quick=True):
+                        quick=False):
     
     if base_dir == None:
         base_dir = os.path.expanduser('~/workflow_folders/')
