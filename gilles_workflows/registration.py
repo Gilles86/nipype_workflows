@@ -86,7 +86,7 @@ def create_fsl_afni_reg(name='ants_fsl_registration',
 
     
     workflow.connect(inputspec, 'target', reg, 'fixed_image')
-    workflow.connect(inputspec, 'mean_epi', reg, 'moving_image')
+    workflow.connect(inputspec, 'anatomical', reg, 'moving_image')
     
     fields_afni = reg.outputs.get().keys()
     
