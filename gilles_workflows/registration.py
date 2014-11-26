@@ -7,7 +7,7 @@ import nipype.interfaces.utility as util
 from nipype.interfaces.c3 import C3dAffineTool
 
 
-def create_fsl_afni_reg(name='ants_fsl_registration',
+def create_fsl_afni_registration_workflow(name='fsl_afni_registration_workflow',
                         base_dir=None,
                         quick=False):
     
