@@ -17,10 +17,9 @@ def create_fsl_afni_reg(name='ants_fsl_registration',
     workflow = pe.Workflow(name=name,
                        base_dir=base_dir)
     
-    inputspec = pe.Node(util.IdentityInterface(fields=['to_anat',
-                                                       'to_target',
-                                                       'mean_epi',
-                                                       'anatomical',
+    inputspec = pe.Node(util.IdentityInterface(fields=['mean_epi',
+                                                       'anatomical_t1_weighted',
+                                                       'anatomical_mp2rage',
                                                        'target']),
                         name='inputspec')
     
@@ -36,12 +35,12 @@ def create_fsl_afni_reg(name='ants_fsl_registration',
     workflow.connect(fast, ('partial_volume_files', pickindex, 2),
                      binarize, 'in_file')
 
-    workflow.connect(inputspec, 'anatomical', fast, 'in_files')
+    workflow.connect(inputspec, 'anatomical_t1_weighted', fast, 'in_files')
     
     mean2anat = pe.Node(fsl.FLIRT(), name='mean2anat')
     mean2anat.inputs.dof = 6
     workflow.connect(inputspec, 'mean_epi', mean2anat, 'in_file')
-    workflow.connect(inputspec, 'anatomical', mean2anat, 'reference')
+    workflow.connect(inputspec, 'anatomical_mp2rage', mean2anat, 'reference')
 
 
     mean2anatbbr = pe.Node(fsl.FLIRT(), name='mean2anatbbr')
@@ -51,7 +50,7 @@ def create_fsl_afni_reg(name='ants_fsl_registration',
                                                 'etc/flirtsch/bbr.sch')
     workflow.connect(inputspec, 'mean_epi', mean2anatbbr, 'in_file')
     workflow.connect(binarize, 'out_file', mean2anatbbr, 'wm_seg')
-    workflow.connect(inputspec, 'anatomical', mean2anatbbr, 'reference')
+    workflow.connect(inputspec, 'anatomical_mp2rage', mean2anatbbr, 'reference')
     workflow.connect(mean2anat, 'out_matrix_file',
                      mean2anatbbr, 'in_matrix_file')
     
@@ -86,7 +85,7 @@ def create_fsl_afni_reg(name='ants_fsl_registration',
 
     
     workflow.connect(inputspec, 'target', reg, 'fixed_image')
-    workflow.connect(inputspec, 'anatomical', reg, 'moving_image')
+    workflow.connect(inputspec, 'anatomical_mp2rage', reg, 'moving_image')
     
     fields_afni = reg.outputs.get().keys()
     
@@ -106,7 +105,7 @@ def create_fsl_afni_reg(name='ants_fsl_registration',
     
     workflow.connect(mean2anatbbr, 'out_matrix_file', convert2itk, 'transform_file')
     workflow.connect(inputspec, 'mean_epi', convert2itk, 'source_file')    
-    workflow.connect(inputspec, 'anatomical', convert2itk, 'reference_file')
+    workflow.connect(inputspec, 'anatomical_mp2rage', convert2itk, 'reference_file')
     workflow.connect(convert2itk, 'itk_transform', outputspec, 'epi2anat_transform')
     
     pickfirst = lambda x: x[0]
@@ -114,26 +113,6 @@ def create_fsl_afni_reg(name='ants_fsl_registration',
     workflow.connect(convert2itk, 'itk_transform', merge, 'in2')
     workflow.connect(reg, ('composite_transform', pickfirst), merge, 'in1')
     
-    apply_epi2mni_transform = pe.MapNode(ants.ApplyTransforms(), 
-                                         iterfield=['input_image'],
-                                         name='apply_epi2mni_transform') 
-    apply_epi2mni_transform.inputs.interpolation = 'BSpline'
-    workflow.connect(inputspec, 'to_target', apply_epi2mni_transform, 'input_image')
-    workflow.connect(inputspec, 'target', apply_epi2mni_transform, 'reference_image')
-    workflow.connect(merge, 'out', apply_epi2mni_transform, 'transforms')
-    
-    apply_epi2anat_transform = pe.MapNode(ants.ApplyTransforms(), 
-                                       iterfield=['input_image'],
-                                       name='apply_epi2anat_transform')    
-    workflow.connect(inputspec, 'to_anat', apply_epi2anat_transform, 'input_image')    
-    workflow.connect(inputspec, 'anatomical', apply_epi2anat_transform, 'reference_image')
-    workflow.connect(convert2itk, 'itk_transform', apply_epi2anat_transform, 'transforms')    
-    apply_epi2anat_transform.inputs.interpolation = 'BSpline'
-    
-    workflow.connect(apply_epi2mni_transform, 'output_image', outputspec, 'transformed_target_space')
-    workflow.connect(apply_epi2anat_transform, 'output_image', outputspec, 'transformed_anat_space')    
-
-        
     return workflow
         
     
