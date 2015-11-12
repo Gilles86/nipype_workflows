@@ -6,7 +6,6 @@ import nipype.interfaces.ants as ants
 import nipype.interfaces.fsl as fsl
 import nipype.interfaces.utility as util
 
-from gilles_workflows import create_fdr_threshold_workflow
 from nipype.workflows.fmri.fsl import create_modelfit_workflow, create_fixed_effects_flow
 
 from nipype.algorithms.modelgen import SpecifyModel
