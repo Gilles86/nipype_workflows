@@ -20,11 +20,11 @@ def create_fsl_ants_registration_workflow(name='fsl_ants_registration_workflow',
     inputspec = pe.Node(util.IdentityInterface(fields=['mean_epi',
                                                        'anatomical_t1_weighted',
                                                        'anatomical_mp2rage',
+                                                       'target',
                                                        'to_target']),
                         name='inputspec')
     
     inputspec.inputs.target = fsl.Info.standard_image('MNI152_T1_2mm_brain.nii.gz')
-    inputspec.inputs.to_anat = []
     inputspec.inputs.to_target = []    
     
     fast = pe.Node(fsl.FAST(), name='fast')
