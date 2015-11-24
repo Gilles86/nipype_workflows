@@ -7,7 +7,7 @@ import nipype.interfaces.utility as util
 from nipype.interfaces.c3 import C3dAffineTool
 
 
-def create_fsl_afni_registration_workflow(name='fsl_afni_registration_workflow',
+def create_fsl_ants_registration_workflow(name='fsl_ants_registration_workflow',
                         base_dir=None,
                         quick=False):
     
@@ -97,7 +97,7 @@ def create_fsl_afni_registration_workflow(name='fsl_afni_registration_workflow',
                                                                  'epi2anat_transform']),
                          name='outputspec')
     
-    for field in fields_afni:
+    for field in fields_ants:
         workflow.connect(reg, field, outputspec, field)
     
     convert2itk = pe.Node(C3dAffineTool(),
