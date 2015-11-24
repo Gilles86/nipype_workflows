@@ -80,10 +80,10 @@ def create_fsl_afni_registration_workflow(name='fsl_afni_registration_workflow',
     reg.inputs.winsorize_upper_quantile = 0.99
     
     if quick:
-        reg.inputs.number_of_iterations = [[100, 100, 100]] * 3 + [[100, 20, 10]]        
+        reg.inputs.number_of_iterations = [[100,50,25,10]]*2 + [[10,10,7,2]]        
     else:
-        reg.inputs.number_of_iterations = ([[10000, 111110, 11110]]*3 +
-                                                   [[100, 50, 30]])        
+        reg.inputs.number_of_iterations = [[1000,500,250,100]]*2 + [[100,100,70,20]]
+        
     
     
     
