@@ -94,7 +94,8 @@ def create_fsl_ants_registration_workflow(name='fsl_ants_registration_workflow',
     
     outputspec = pe.Node(util.IdentityInterface(fields=fields_ants + ['transformed_anat_space',
                                                                  'transformed_target_space',
-                                                                 'epi2anat_transform']),
+                                                                 'epi2anat_transform',
+                                                                      'epi_in_anat_space']),
                          name='outputspec')
     
     for field in fields_ants:
@@ -107,14 +108,23 @@ def create_fsl_ants_registration_workflow(name='fsl_ants_registration_workflow',
     
     
     workflow.connect(mean2anatbbr, 'out_matrix_file', convert2itk, 'transform_file')
+    workflow.connect(mean2anatbbr, 'out_file', outputspec, 'epi_in_anat_space')
     workflow.connect(inputspec, 'mean_epi', convert2itk, 'source_file')    
     workflow.connect(inputspec, 'anatomical_mp2rage', convert2itk, 'reference_file')
     workflow.connect(convert2itk, 'itk_transform', outputspec, 'epi2anat_transform')
     
     pickfirst = lambda x: x[0]
     merge = pe.Node(util.Merge(2), name='mergexfm')
-    workflow.connect(convert2itk, 'itk_transform', merge, 'in2')
-    workflow.connect(reg, ('composite_transform', pickfirst), merge, 'in1')
+    workflow.connect(convert2itk, 'itk_transform', merge, 'in1')
+    workflow.connect(reg, ('composite_transform', pickfirst), merge, 'in2')
+
+
+    mni_applier = pe.MapNode(ants.ApplyTransforms(), iterfield=['input_image'], name='mni_applier')
+
+    workflow.connect(inputspec, 'target', mni_applier, 'reference_image')
+    workflow.connect(merge, 'out', mni_applier, 'transforms')
+    workflow.connect(inputspec, 'to_target', mni_applier, 'input_image')
+
     
     return workflow
         
