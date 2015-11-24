@@ -54,10 +54,30 @@ def create_fsl_afni_registration_workflow(name='fsl_afni_registration_workflow',
     workflow.connect(mean2anat, 'out_matrix_file',
                      mean2anatbbr, 'in_matrix_file')
     
+
     reg = pe.Node(ants.Registration(), name='antsRegister')
-    reg.inputs.output_transform_prefix = ""
-    reg.inputs.transforms = ['Translation', 'Rigid', 'Affine', 'SyN']
-    reg.inputs.transform_parameters = [(0.1,), (0.1,), (0.1,), (0.2, 3.0, 0.0)]
+    reg.inputs.transforms = ['Rigid', 'Affine', 'SyN']
+    reg.inputs.transform_parameters = [(0.1,), (0.1,), (0.1, 3.0, 0.0)]
+    reg.inputs.number_of_iterations = [[1000,500,250,100]]*2 + [[100,100,70,20]]
+    reg.inputs.dimension = 3
+    reg.inputs.write_composite_transform = True
+    reg.inputs.collapse_output_transforms = True
+    reg.inputs.metric = ['MI']*2 + ['CC']
+    reg.inputs.metric_weight = [1]*3 # Default (value ignored currently by ANTs)
+    reg.inputs.radius_or_number_of_bins = [32]*2 + [4]
+    reg.inputs.sampling_strategy = ['Regular']*2 + [None]
+    reg.inputs.sampling_percentage = [0.25]*2 + [None]
+    reg.inputs.convergence_threshold = [1.e-8]*2 + [1e-9]
+    reg.inputs.convergence_window_size = [10]*2 + [15]
+    reg.inputs.smoothing_sigmas = [[3,2,1,0]]*3
+    reg.inputs.sigma_units = ['mm']*3
+    reg.inputs.shrink_factors = [[8,4,2,1]]*2 + [[6,4,2,1]]
+    reg.inputs.use_estimate_learning_rate_once = [True, True, True]
+    reg.inputs.use_histogram_matching = [False]*2 + [True] # This is the default
+    reg.inputs.initial_moving_transform_com = True
+    reg.inputs.output_warped_image = True
+    reg.inputs.winsorize_lower_quantile = 0.01
+    reg.inputs.winsorize_upper_quantile = 0.99
     
     if quick:
         reg.inputs.number_of_iterations = [[100, 100, 100]] * 3 + [[100, 20, 10]]        
@@ -66,25 +86,6 @@ def create_fsl_afni_registration_workflow(name='fsl_afni_registration_workflow',
                                                    [[100, 50, 30]])        
     
     
-    reg.inputs.transforms = ['Affine', 'SyN']
-    reg.inputs.transform_parameters = [(2.0,), (0.25, 3.0, 0.0)]
-    reg.inputs.number_of_iterations = [[1500, 200], [100, 50, 30]]
-    reg.inputs.dimension = 3
-    reg.inputs.write_composite_transform = True
-    reg.inputs.collapse_output_transforms = False
-    reg.inputs.metric = ['Mattes']*2
-    reg.inputs.metric_weight = [1]*2 # Default (value ignored currently by ANTs)
-    reg.inputs.radius_or_number_of_bins = [32]*2
-    reg.inputs.sampling_strategy = ['Random', None]
-    reg.inputs.sampling_percentage = [0.05, None]
-    reg.inputs.convergence_threshold = [1.e-8, 1.e-9]
-    reg.inputs.convergence_window_size = [20]*2
-    reg.inputs.smoothing_sigmas = [[1,0], [2,1,0]]
-    reg.inputs.sigma_units = ['vox'] * 2
-    reg.inputs.shrink_factors = [[2,1], [3,2,1]]
-    reg.inputs.use_estimate_learning_rate_once = [True, True]
-    reg.inputs.use_histogram_matching = [True, True] # This is the default
-
     
     workflow.connect(inputspec, 'target', reg, 'fixed_image')
     workflow.connect(inputspec, 'anatomical_mp2rage', reg, 'moving_image')
