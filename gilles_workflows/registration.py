@@ -90,9 +90,9 @@ def create_fsl_afni_registration_workflow(name='fsl_afni_registration_workflow',
     workflow.connect(inputspec, 'target', reg, 'fixed_image')
     workflow.connect(inputspec, 'anatomical_mp2rage', reg, 'moving_image')
     
-    fields_afni = reg.outputs.get().keys()
+    fields_ants = reg.outputs.get().keys()
     
-    outputspec = pe.Node(util.IdentityInterface(fields=fields_afni + ['transformed_anat_space',
+    outputspec = pe.Node(util.IdentityInterface(fields=fields_ants + ['transformed_anat_space',
                                                                  'transformed_target_space',
                                                                  'epi2anat_transform']),
                          name='outputspec')
