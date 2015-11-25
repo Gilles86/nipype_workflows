@@ -123,6 +123,7 @@ def create_fsl_ants_registration_workflow(name='fsl_ants_registration_workflow',
     workflow.connect(inputspec, 'target', mni_applier, 'reference_image')
     workflow.connect(merge, 'out', mni_applier, 'transforms')
     workflow.connect(inputspec, 'to_target', mni_applier, 'input_image')
+    workflow.connect(mni_applier, 'output_image', outputspec, 'transformed_target_space')
 
     
     return workflow
