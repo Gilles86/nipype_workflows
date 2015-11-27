@@ -154,3 +154,86 @@ def create_modelfit_workflow_bfsl(name='modelfit_workflow_bfsl'):
     
     return workflow
 
+
+def create_random_effects_workflow(name='randomfx'):
+
+
+    inputspec = pe.Node(util.IdentityInterface(fields=['cope_files',
+                                                        'varcope_files', 
+                                                       'tdof_files',
+                                                        'mask_file',
+                                                        'fdr_q']),
+                                              name='inputspec')
+
+
+    inputspec.inputs.fdr_q = 0.05
+    
+    workflow = pe.Workflow(name=name)
+    fixedfx_flow = create_fixed_effects_flow()
+
+
+
+    def num_copes(files):
+        return len(files)
+
+    def listify(x):
+        return [x]
+
+    workflow.connect(inputspec, ('cope_files', listify), fixedfx_flow, 'inputspec.copes')
+    workflow.connect(inputspec, ('varcope_files', listify), fixedfx_flow, 'inputspec.varcopes')
+
+    workflow.connect(inputspec, ('varcope_files', num_copes), fixedfx_flow, 'l2model.num_copes')
+
+    workflow.connect(inputspec, 'mask_file', fixedfx_flow, 'flameo.mask_file')
+
+    fixedfx_flow.inputs.flameo.run_mode = 'flame1'
+
+    
+    fixedfx_flow.disconnect([(fixedfx_flow.get_node('inputspec'), fixedfx_flow.get_node('gendofvolume'), [('dof_files', 'dof_files')]),
+                             (fixedfx_flow.get_node('copemerge'), fixedfx_flow.get_node('gendofvolume'), [('merged_file', 'cope_files')]),
+                             (fixedfx_flow.get_node('gendofvolume'), fixedfx_flow.get_node('flameo'), [('dof_volume', 'dof_var_cope_file')])])
+    fixedfx_flow.remove_nodes([fixedfx_flow.get_node('gendofvolume')])
+
+    tdof_merge =  pe.Node(interface=fsl.Merge(dimension='t'), name="tdof_merge")
+    workflow.connect(inputspec, 'tdof_files', tdof_merge, 'in_files')
+    workflow.connect(tdof_merge, 'merged_file', fixedfx_flow, 'flameo.dof_var_cope_file')
+
+
+    ztopval = pe.MapNode(interface=fsl.ImageMaths(op_string='-ztop',
+                                                  suffix='_pval'),
+                         iterfield=['in_file'],
+                         nested=True,
+                         name='ztop',)
+
+    fdr_workflow = create_fdr_threshold_workflow()
+
+    workflow.connect([
+                      (fixedfx_flow, ztopval,
+                       [('outputspec.zstats', 'in_file'),]),
+                      (fixedfx_flow, fdr_workflow,
+                       [('outputspec.zstats', 'inputspec.z_stats'),]),
+                      (ztopval, fdr_workflow,
+                       [('out_file', 'inputspec.p_values'),]),
+                      ])
+
+    workflow.connect(inputspec, 'mask_file', fdr_workflow, 'inputspec.mask')
+    workflow.connect(inputspec, 'fdr_q', fdr_workflow, 'inputspec.q')
+
+
+    cluster = pe.MapNode(fsl.Cluster(), iterfield=['in_file'], name='cluster')
+    cluster.inputs.threshold = 0.0
+    cluster.inputs.out_threshold_file = True
+    cluster.inputs.out_localmax_txt_file = True
+    workflow.connect(fdr_workflow, 'outputspec.thresholded_z_stats', cluster, 'in_file')
+
+
+
+    outputspec = pe.Node(util.IdentityInterface(fields=['zstats', 'thresholded_z_stats', 'txt_index_file']), name='outputspec')
+
+
+    workflow.connect(fixedfx_flow, 'outputspec.zstats', outputspec, 'zstats')
+    workflow.connect(fdr_workflow, 'outputspec.thresholded_z_stats', outputspec, 'thresholded_z_stats')
+
+    workflow.connect(cluster, 'localmax_txt_file', outputspec, 'txt_index_file')
+
+    return workflow
