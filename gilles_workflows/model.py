@@ -221,7 +221,7 @@ def create_random_effects_workflow(name='randomfx'):
 
 
     cluster = pe.MapNode(fsl.Cluster(), iterfield=['in_file'], name='cluster')
-    cluster.inputs.threshold = 0.0
+    cluster.inputs.threshold = 2.0
     cluster.inputs.out_threshold_file = True
     cluster.inputs.out_localmax_txt_file = True
     workflow.connect(fdr_workflow, 'outputspec.thresholded_z_stats', cluster, 'in_file')
