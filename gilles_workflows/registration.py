@@ -114,8 +114,8 @@ def create_fsl_ants_registration_workflow(name='fsl_ants_registration_workflow',
     workflow.connect(convert2itk, 'itk_transform', outputspec, 'epi2anat_transform')
     
     merge = pe.Node(util.Merge(2), name='mergexfm')
-    workflow.connect(convert2itk, 'itk_transform', merge, 'in1')
-    workflow.connect(reg, 'composite_transform', merge, 'in2')
+    workflow.connect(convert2itk, 'itk_transform', merge, 'in2')
+    workflow.connect(reg, 'composite_transform', merge, 'in1')
 
 
     mni_applier = pe.MapNode(ants.ApplyTransforms(), iterfield=['input_image'], name='mni_applier')
